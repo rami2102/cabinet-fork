@@ -1,7 +1,5 @@
-import fs from "fs/promises";
 import path from "path";
 import matter from "gray-matter";
-import yaml from "js-yaml";
 import type { PageData, FrontMatter } from "@/types";
 import { resolveContentPath } from "./path-utils";
 import {
@@ -10,7 +8,6 @@ import {
   ensureDirectory,
   fileExists,
   deleteFileOrDir,
-  unlinkSymlink,
 } from "./fs-operations";
 
 function defaultFrontmatter(title: string): FrontMatter {
@@ -25,57 +22,32 @@ export async function readPage(virtualPath: string): Promise<PageData> {
   const indexPath = path.join(resolved, "index.md");
   const mdPath = resolved.endsWith(".md") ? resolved : `${resolved}.md`;
 
-  let filePath: string | null = null;
+  let filePath: string;
   if (await fileExists(indexPath)) {
     filePath = indexPath;
   } else if (await fileExists(mdPath)) {
     filePath = mdPath;
   } else if (await fileExists(resolved)) {
-    // Could be a raw file or a directory — check for .cabinet.yaml fallback
-    const stat = await fs.stat(resolved);
-    if (stat.isFile()) {
-      filePath = resolved;
-    }
+    filePath = resolved;
+  } else {
+    throw new Error(`Page not found: ${virtualPath}`);
   }
 
-  if (filePath) {
-    const raw = await readFileContent(filePath);
-    const { data, content } = matter(raw);
+  const raw = await readFileContent(filePath);
+  const { data, content } = matter(raw);
 
-    return {
-      path: virtualPath,
-      content: content.trim(),
-      frontmatter: {
-        title: data.title || path.basename(virtualPath, ".md"),
-        created: data.created || new Date().toISOString(),
-        modified: data.modified || new Date().toISOString(),
-        tags: data.tags || [],
-        icon: data.icon,
-        order: data.order,
-      },
-    };
-  }
-
-  // Fallback for linked directories without index.md — read .cabinet.yaml
-  const cabinetYaml = path.join(resolved, ".cabinet.yaml");
-  if (await fileExists(cabinetYaml)) {
-    const raw = await readFileContent(cabinetYaml);
-    const meta = yaml.load(raw) as Record<string, unknown>;
-    return {
-      path: virtualPath,
-      content:
-        (meta.description as string) ||
-        "This folder is linked from an external directory.",
-      frontmatter: {
-        title: (meta.title as string) || path.basename(virtualPath),
-        created: (meta.created as string) || new Date().toISOString(),
-        modified: (meta.created as string) || new Date().toISOString(),
-        tags: (meta.tags as string[]) || [],
-      },
-    };
-  }
-
-  throw new Error(`Page not found: ${virtualPath}`);
+  return {
+    path: virtualPath,
+    content: content.trim(),
+    frontmatter: {
+      title: data.title || path.basename(virtualPath, ".md"),
+      created: data.created || new Date().toISOString(),
+      modified: data.modified || new Date().toISOString(),
+      tags: data.tags || [],
+      icon: data.icon,
+      order: data.order,
+    },
+  };
 }
 
 export async function writePage(
@@ -130,12 +102,7 @@ export async function createPage(
 
 export async function deletePage(virtualPath: string): Promise<void> {
   const resolved = resolveContentPath(virtualPath);
-  const stat = await fs.lstat(resolved).catch(() => null);
-  if (stat?.isSymbolicLink()) {
-    await unlinkSymlink(resolved);
-  } else {
-    await deleteFileOrDir(resolved);
-  }
+  await deleteFileOrDir(resolved);
 }
 
 export async function movePage(

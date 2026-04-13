@@ -24,7 +24,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Allow health check
-  if (pathname.startsWith("/api/health")) {
+  if (pathname === "/api/health") {
     return NextResponse.next();
   }
 

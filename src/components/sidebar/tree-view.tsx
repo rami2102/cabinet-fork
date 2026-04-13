@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LinkRepoDialog } from "./link-repo-dialog";
 import {
   ChevronRight,
   Plus,
@@ -30,9 +29,6 @@ import {
   Pencil,
   FilePlus,
   FolderOpen,
-  GitBranch,
-  Copy,
-  ClipboardCopy,
   Archive,
   Crown,
   Megaphone,
@@ -53,7 +49,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getDataDir } from "@/lib/data-dir-cache";
 
 interface AgentSummary {
   name: string;
@@ -122,7 +117,6 @@ export function TreeView() {
   const [kbSubPageOpen, setKbSubPageOpen] = useState(false);
   const [kbSubPageTitle, setKbSubPageTitle] = useState("");
   const [kbCreating, setKbCreating] = useState(false);
-  const [linkRepoOpen, setLinkRepoOpen] = useState(false);
 
   // When a KB page is clicked (via TreeNode), switch section to "page"
   useEffect(() => {
@@ -334,17 +328,6 @@ export function TreeView() {
                   <FilePlus className="h-4 w-4 mr-2" />
                   Add Sub Page
                 </ContextMenuItem>
-                <ContextMenuItem onClick={() => setLinkRepoOpen(true)}>
-                  <GitBranch className="h-4 w-4 mr-2" />
-                  Load Knowledge
-                </ContextMenuItem>
-                <ContextMenuItem onClick={async () => {
-                  const dir = await getDataDir();
-                  navigator.clipboard.writeText(dir);
-                }}>
-                  <ClipboardCopy className="h-4 w-4 mr-2" />
-                  Copy Full Path
-                </ContextMenuItem>
                 <ContextMenuItem onClick={() => {
                   fetch("/api/system/open-data-dir", {
                     method: "POST",
@@ -429,8 +412,6 @@ export function TreeView() {
         </form>
       </DialogContent>
     </Dialog>
-
-    <LinkRepoDialog open={linkRepoOpen} onOpenChange={setLinkRepoOpen} />
 
     </>
   );

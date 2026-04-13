@@ -20,17 +20,8 @@ import {
   Palette,
   Check,
   Info,
-  Terminal,
-  ExternalLink,
-  ChevronDown,
-  Copy,
-  ClipboardCheck,
-  HardDrive,
-  FolderOpen,
-  RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UpdateSummary } from "@/components/system/update-summary";
 import { useCabinetUpdate } from "@/hooks/use-cabinet-update";
@@ -69,69 +60,14 @@ interface IntegrationConfig {
   };
 }
 
-type Tab = "providers" | "storage" | "integrations" | "notifications" | "appearance" | "updates" | "about";
-
-function TerminalCommand({ command }: { command: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard.writeText(command);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div
-      className="flex items-center gap-2 rounded-lg px-3 py-2 mt-1.5 font-mono text-[12px]"
-      style={{ background: "#1e1e1e", color: "#d4d4d4" }}
-    >
-      <span style={{ color: "#6A9955" }}>$</span>
-      <span className="flex-1 select-all">{command}</span>
-      <button
-        onClick={copy}
-        className="shrink-0 p-1 rounded transition-colors hover:bg-white/10"
-        title="Copy to clipboard"
-      >
-        {copied ? (
-          <ClipboardCheck className="size-3.5" style={{ color: "#6A9955" }} />
-        ) : (
-          <Copy className="size-3.5" style={{ color: "#808080" }} />
-        )}
-      </button>
-    </div>
-  );
-}
-
-type SetupStep = { title: string; detail: string; cmd?: string; openTerminal?: boolean; link?: { label: string; url: string } };
-
-const PROVIDER_SETUP_STEPS: Record<string, SetupStep[]> = {
-  "claude-code": [
-    { title: "Get a Claude subscription", detail: "Any Claude Code subscription will do (Pro, Max, or Team).", link: { label: "Open Claude billing", url: "https://claude.ai/settings/billing" } },
-    { title: "Open a terminal", detail: "You'll need a terminal to run the next steps.", openTerminal: true },
-    { title: "Install Claude Code", detail: "Run the following in your terminal:", cmd: "npm install -g @anthropic-ai/claude-code" },
-    { title: "Log in to Claude", detail: "Authenticate with your subscription:", cmd: "claude auth login" },
-    { title: "Verify login", detail: "Check that you're logged in:", cmd: "claude auth status" },
-  ],
-  "codex-cli": [
-    { title: "Open a terminal", detail: "You'll need a terminal to run the next steps.", openTerminal: true },
-    { title: "Install Codex CLI", detail: "Run the following in your terminal:", cmd: "npm i -g @openai/codex" },
-    { title: "Log in to Codex", detail: "Authenticate with your ChatGPT or API account:", cmd: "codex login" },
-    { title: "Verify login", detail: "Check that you're logged in:", cmd: "codex login status" },
-  ],
-};
+type Tab = "providers" | "integrations" | "notifications" | "appearance" | "updates" | "about";
 
 export function SettingsPage() {
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [defaultProvider, setDefaultProvider] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingProviders, setSavingProviders] = useState(false);
-  const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
-  const [dataDir, setDataDir] = useState("");
-  const [dataDirPending, setDataDirPending] = useState<string | null>(null);
-  const [dataDirBrowsing, setDataDirBrowsing] = useState(false);
-  const [dataDirSaving, setDataDirSaving] = useState(false);
-  const [dataDirRestartNeeded, setDataDirRestartNeeded] = useState(false);
-  const VALID_TABS: Tab[] = ["providers", "storage", "integrations", "notifications", "appearance", "updates", "about"];
+  const VALID_TABS: Tab[] = ["providers", "integrations", "notifications", "appearance", "updates", "about"];
   const initialTab = (() => {
     const slug = useAppStore.getState().section.slug as Tab | undefined;
     return slug && VALID_TABS.includes(slug) ? slug : "providers";
@@ -200,8 +136,8 @@ export function SettingsPage() {
   const darkThemes = THEMES.filter((t) => t.type === "dark");
   const lightThemes = THEMES.filter((t) => t.type === "light");
 
-  const refresh = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+  const refresh = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await fetch("/api/agents/providers");
       if (res.ok) {
@@ -233,7 +169,7 @@ export function SettingsPage() {
         }),
       });
       if (res.ok) {
-        await refresh(true);
+        await refresh();
         return true;
       }
 
@@ -303,23 +239,10 @@ export function SettingsPage() {
     }
   };
 
-  const loadDataDir = useCallback(async () => {
-    try {
-      const res = await fetch("/api/system/data-dir");
-      if (res.ok) {
-        const data = await res.json();
-        setDataDir(data.dataDir || "");
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
   useEffect(() => {
     refresh();
     loadConfig();
-    loadDataDir();
-  }, [refresh, loadConfig, loadDataDir]);
+  }, [refresh, loadConfig]);
 
   const toggleReveal = (key: string) => {
     setRevealedKeys((prev) => {
@@ -377,7 +300,6 @@ export function SettingsPage() {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "providers", label: "Providers", icon: <Cpu className="h-3.5 w-3.5" /> },
-    { id: "storage", label: "Storage", icon: <HardDrive className="h-3.5 w-3.5" /> },
     { id: "integrations", label: "Integrations", icon: <Plug className="h-3.5 w-3.5" /> },
     { id: "notifications", label: "Notifications", icon: <Bell className="h-3.5 w-3.5" /> },
     { id: "appearance", label: "Appearance", icon: <Palette className="h-3.5 w-3.5" /> },
@@ -516,151 +438,6 @@ export function SettingsPage() {
             </div>
           )}
 
-          {/* Storage Tab */}
-          {tab === "storage" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-[14px] font-semibold mb-1">Data Directory</h3>
-                <p className="text-[12px] text-muted-foreground">
-                  All Knowledge Base content is stored in this directory.
-                  Changing the path requires a restart.
-                </p>
-              </div>
-
-              {dataDirRestartNeeded && (
-                <div className="flex items-center gap-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
-                  <RotateCw className="h-4 w-4 shrink-0 text-yellow-500" />
-                  <div className="flex-1">
-                    <p className="text-[13px] font-medium text-yellow-500">Restart required</p>
-                    <p className="text-[12px] text-muted-foreground">
-                      The data directory will change after you restart Cabinet.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label className="text-[12px] font-medium text-muted-foreground">
-                  Current path
-                </label>
-                <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 bg-muted/30">
-                  <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="flex-1 font-mono text-[12px] truncate select-all">
-                    {dataDir || "Loading..."}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-[11px]"
-                    onClick={() => {
-                      navigator.clipboard.writeText(dataDir);
-                    }}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[12px] font-medium text-muted-foreground">
-                  Change directory
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="/path/to/data"
-                    value={dataDirPending ?? ""}
-                    onChange={(e) => setDataDirPending(e.target.value)}
-                    className="font-mono text-[12px]"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 shrink-0"
-                    disabled={dataDirBrowsing || dataDirSaving}
-                    onClick={async () => {
-                      setDataDirBrowsing(true);
-                      try {
-                        const res = await fetch("/api/system/pick-directory", { method: "POST" });
-                        const data = await res.json().catch(() => null);
-                        if (data?.path) setDataDirPending(data.path);
-                      } catch {
-                        // ignore
-                      } finally {
-                        setDataDirBrowsing(false);
-                      }
-                    }}
-                  >
-                    {dataDirBrowsing ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <FolderOpen className="h-3.5 w-3.5" />
-                    )}
-                    Browse
-                  </Button>
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <Button
-                    size="sm"
-                    disabled={!dataDirPending?.trim() || dataDirSaving || dataDirPending.trim() === dataDir}
-                    onClick={async () => {
-                      if (!dataDirPending?.trim()) return;
-                      setDataDirSaving(true);
-                      try {
-                        const res = await fetch("/api/system/data-dir", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ dataDir: dataDirPending.trim() }),
-                        });
-                        const data = await res.json().catch(() => null);
-                        if (!res.ok) {
-                          alert(data?.error || "Failed to save.");
-                          return;
-                        }
-                        setDataDirRestartNeeded(true);
-                        setDataDirPending(null);
-                      } catch {
-                        alert("Failed to save data directory.");
-                      } finally {
-                        setDataDirSaving(false);
-                      }
-                    }}
-                  >
-                    {dataDirSaving ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                    ) : (
-                      <Save className="h-3.5 w-3.5 mr-1.5" />
-                    )}
-                    Save
-                  </Button>
-                  {dataDir && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground"
-                      onClick={() => {
-                        fetch("/api/system/open-data-dir", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({}),
-                        });
-                      }}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                      Open in Finder
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <p className="text-[12px] text-muted-foreground">
-                  You can also set the <code className="px-1 py-0.5 rounded bg-muted text-[11px]">CABINET_DATA_DIR</code> environment
-                  variable, which takes priority over this setting.
-                </p>
-              </div>
-            </div>
-          )}
-
           {tab === "updates" && update && (
             <UpdateSummary
               update={update}
@@ -703,52 +480,25 @@ export function SettingsPage() {
                         <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                           Default provider
                         </label>
-                        <div className="mt-2 space-y-1">
+                        <select
+                          value={defaultProvider}
+                          onChange={(event) => {
+                            const disabledProviderIds = providers
+                              .filter((provider) => !provider.enabled)
+                              .map((provider) => provider.id);
+                            void saveProviderSettings(event.target.value, disabledProviderIds);
+                          }}
+                          disabled={savingProviders}
+                          className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-[13px] text-foreground"
+                        >
                           {providers
-                            .filter((p) => p.type === "cli" && p.available && p.authenticated)
-                            .map((provider) => {
-                              const isDefault = provider.id === defaultProvider;
-                              return (
-                                <button
-                                  key={provider.id}
-                                  onClick={() => {
-                                    if (isDefault || savingProviders) return;
-                                    const disabledProviderIds = providers
-                                      .filter((p) => !p.enabled && p.id !== provider.id)
-                                      .map((p) => p.id);
-                                    void saveProviderSettings(provider.id, disabledProviderIds);
-                                  }}
-                                  disabled={savingProviders}
-                                  className={cn(
-                                    "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-[13px] transition-colors",
-                                    isDefault
-                                      ? "bg-primary/5 border border-primary/30"
-                                      : "border border-transparent hover:bg-muted"
-                                  )}
-                                >
-                                  <span className={cn(
-                                    "flex size-4 shrink-0 items-center justify-center rounded-full border",
-                                    isDefault
-                                      ? "border-primary bg-primary text-primary-foreground"
-                                      : "border-muted-foreground/30"
-                                  )}>
-                                    {isDefault && <Check className="size-2.5" />}
-                                  </span>
-                                  <span className={cn("font-medium", isDefault ? "text-foreground" : "text-muted-foreground")}>
-                                    {provider.name}
-                                  </span>
-                                  {provider.version && (
-                                    <span className="ml-auto text-[10px] text-muted-foreground/60">{provider.version}</span>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          {providers.filter((p) => p.type === "cli" && p.available && p.authenticated).length === 0 && (
-                            <p className="text-[12px] text-muted-foreground py-2">
-                              No providers are installed and logged in. Follow the setup guides below.
-                            </p>
-                          )}
-                        </div>
+                            .filter((provider) => provider.type === "cli" && provider.enabled)
+                            .map((provider) => (
+                              <option key={provider.id} value={provider.id}>
+                                {provider.name}
+                              </option>
+                            ))}
+                        </select>
                         <p className="mt-2 text-[11px] text-muted-foreground">
                           General conversations and fallback runs use this provider.
                         </p>
@@ -760,182 +510,83 @@ export function SettingsPage() {
                       <div className="space-y-2">
                         {providers
                           .filter((p) => p.type === "cli")
-                          .map((provider) => {
-                            const isReady = !!(provider.available && provider.authenticated);
-                            const isInstalled = !!provider.available;
-                            const isExpanded = expandedProvider === provider.id;
-                            const setupSteps = PROVIDER_SETUP_STEPS[provider.id] || [];
-                            const statusColor = isReady ? "text-green-500" : isInstalled ? "text-amber-500" : "text-muted-foreground";
-                            const statusText = isReady
-                              ? provider.version || "Ready"
-                              : isInstalled
-                                ? "Installed but not logged in"
-                                : "Not installed";
-                            return (
-                              <div
-                                key={provider.id}
-                                className="bg-card border border-border rounded-lg p-3 space-y-2"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    {isReady ? (
-                                      <CheckCircle className="h-4 w-4 text-green-500" />
-                                    ) : isInstalled ? (
-                                      <XCircle className="h-4 w-4 text-amber-500" />
-                                    ) : (
-                                      <XCircle className="h-4 w-4 text-muted-foreground" />
-                                    )}
-                                    <div>
-                                      <p className="text-[13px] font-medium">{provider.name}</p>
-                                      <p className={cn("text-[11px]", statusColor)}>
-                                        {statusText}
-                                      </p>
-                                      {(provider.usage?.totalCount ?? 0) > 0 && (
-                                        <p className="text-[11px] text-muted-foreground">
-                                          In use by {describeProviderUsage(provider)}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {setupSteps.length > 0 && (
-                                      <button
-                                        onClick={() => setExpandedProvider(isExpanded ? null : provider.id)}
-                                        className={cn(
-                                          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all",
-                                          isExpanded ? "bg-muted" : ""
-                                        )}
-                                        title="Setup guide"
-                                      >
-                                        <Info className="size-3" />
-                                        Guide
-                                        <ChevronDown
-                                          className="size-3 transition-transform duration-300"
-                                          style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
-                                        />
-                                      </button>
-                                    )}
-                                    <span className={cn(
-                                      "text-[10px] px-2 py-0.5 rounded-full font-medium",
-                                      provider.id === defaultProvider
-                                        ? "bg-primary/10 text-primary"
-                                        : provider.enabled
-                                          ? "bg-emerald-500/10 text-emerald-500"
-                                          : "bg-muted text-muted-foreground"
-                                    )}>
-                                      {provider.id === defaultProvider
-                                        ? "Default"
-                                        : provider.enabled
-                                          ? "Enabled"
-                                          : "Disabled"}
-                                    </span>
-                                    <button
-                                      onClick={async () => {
-                                        const nextDisabled = provider.enabled
-                                          ? providers
-                                              .filter((entry) => !entry.enabled || entry.id === provider.id)
-                                              .map((entry) => entry.id)
-                                          : providers
-                                              .filter((entry) => !entry.enabled && entry.id !== provider.id)
-                                              .map((entry) => entry.id);
-                                        const enabledAfterToggle = providers.filter(
-                                          (entry) => !nextDisabled.includes(entry.id) && entry.type === "cli"
-                                        );
-                                        const nextDefault =
-                                          provider.id === defaultProvider && nextDisabled.includes(provider.id)
-                                            ? enabledAfterToggle[0]?.id || defaultProvider
-                                            : defaultProvider;
-                                        const migrations =
-                                          provider.enabled && (provider.usage?.totalCount ?? 0) > 0
-                                            ? [{ fromProviderId: provider.id, toProviderId: nextDefault }]
-                                            : [];
-
-                                        if (provider.enabled && (provider.usage?.totalCount ?? 0) > 0) {
-                                          const confirmed = window.confirm(
-                                            `Disable ${provider.name} and migrate ${describeProviderUsage(provider)} to ${getProviderName(nextDefault)}?`
-                                          );
-                                          if (!confirmed) return;
-                                        }
-
-                                        await saveProviderSettings(nextDefault, nextDisabled, migrations);
-                                      }}
-                                      disabled={savingProviders || (provider.id === defaultProvider && providers.filter((entry) => entry.type === "cli" && entry.enabled).length <= 1)}
-                                      className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-                                    >
-                                      {provider.enabled ? "Disable" : "Enable"}
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Expandable setup guide */}
-                                {setupSteps.length > 0 && (
-                                  <div
-                                    className="overflow-hidden transition-all duration-300 ease-in-out"
-                                    style={{
-                                      maxHeight: isExpanded ? 600 : 0,
-                                      opacity: isExpanded ? 1 : 0,
-                                    }}
-                                  >
-                                    <div className="rounded-lg bg-muted/50 p-3 space-y-3">
-                                      {setupSteps.map((step, i) => (
-                                        <div key={i} className="flex items-start gap-2.5">
-                                          <span className="flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold mt-0.5 bg-primary text-primary-foreground">
-                                            {i + 1}
-                                          </span>
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-[13px] font-medium">{step.title}</p>
-                                            <p className="text-[11px] mt-0.5 text-muted-foreground">{step.detail}</p>
-                                            {step.cmd && (
-                                              <TerminalCommand command={step.cmd} />
-                                            )}
-                                            {step.openTerminal && (
-                                              <button
-                                                onClick={() => {
-                                                  fetch("/api/terminal/open", { method: "POST" }).catch(() => {
-                                                    alert("Could not open terminal automatically. Please open Terminal.app (Mac) or your system terminal manually.");
-                                                  });
-                                                }}
-                                                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 mt-1.5 text-[11px] font-medium transition-all hover:-translate-y-0.5"
-                                                style={{ background: "#1e1e1e", color: "#d4d4d4" }}
-                                              >
-                                                <Terminal className="size-3" />
-                                                Open terminal
-                                              </button>
-                                            )}
-                                            {step.link && (
-                                              <a
-                                                href={step.link.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 text-[11px] font-medium mt-1.5 text-primary hover:underline"
-                                              >
-                                                {step.link.label}
-                                                <ExternalLink className="size-3" />
-                                              </a>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ))}
-                                      <p className="text-[11px] text-muted-foreground">
-                                        After setup, click Re-check below to verify.
-                                      </p>
-                                    </div>
-                                  </div>
+                          .map((provider) => (
+                            <div
+                              key={provider.id}
+                              className="flex items-center justify-between bg-card border border-border rounded-lg p-3"
+                            >
+                              <div className="flex items-center gap-3">
+                                {provider.available ? (
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <XCircle className="h-4 w-4 text-muted-foreground" />
                                 )}
+                                <div>
+                                  <p className="text-[13px] font-medium">{provider.name}</p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {provider.available ? provider.version || "Ready" : provider.error || "Not installed"}
+                                  </p>
+                                  {(provider.usage?.totalCount ?? 0) > 0 && (
+                                    <p className="text-[11px] text-muted-foreground">
+                                      In use by {describeProviderUsage(provider)}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                            );
-                          })}
-                      </div>
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "text-[10px] px-2 py-0.5 rounded-full font-medium",
+                                  provider.id === defaultProvider
+                                    ? "bg-primary/10 text-primary"
+                                    : provider.enabled
+                                      ? "bg-emerald-500/10 text-emerald-500"
+                                      : "bg-muted text-muted-foreground"
+                                )}>
+                                  {provider.id === defaultProvider
+                                    ? "Default"
+                                    : provider.enabled
+                                      ? "Enabled"
+                                      : "Disabled"}
+                                </span>
+                                <button
+                                  onClick={async () => {
+                                    const nextDisabled = provider.enabled
+                                      ? providers
+                                          .filter((entry) => !entry.enabled || entry.id === provider.id)
+                                          .map((entry) => entry.id)
+                                      : providers
+                                          .filter((entry) => !entry.enabled && entry.id !== provider.id)
+                                          .map((entry) => entry.id);
+                                    const enabledAfterToggle = providers.filter(
+                                      (entry) => !nextDisabled.includes(entry.id) && entry.type === "cli"
+                                    );
+                                    const nextDefault =
+                                      provider.id === defaultProvider && nextDisabled.includes(provider.id)
+                                        ? enabledAfterToggle[0]?.id || defaultProvider
+                                        : defaultProvider;
+                                    const migrations =
+                                      provider.enabled && (provider.usage?.totalCount ?? 0) > 0
+                                        ? [{ fromProviderId: provider.id, toProviderId: nextDefault }]
+                                        : [];
 
-                      {/* Re-check button */}
-                      <button
-                        onClick={() => void refresh()}
-                        disabled={loading}
-                        className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-50 mt-2"
-                      >
-                        <RefreshCw className={cn("size-3", loading && "animate-spin")} />
-                        Re-check providers
-                      </button>
+                                    if (provider.enabled && (provider.usage?.totalCount ?? 0) > 0) {
+                                      const confirmed = window.confirm(
+                                        `Disable ${provider.name} and migrate ${describeProviderUsage(provider)} to ${getProviderName(nextDefault)}?`
+                                      );
+                                      if (!confirmed) return;
+                                    }
+
+                                    await saveProviderSettings(nextDefault, nextDisabled, migrations);
+                                  }}
+                                  disabled={savingProviders || (provider.id === defaultProvider && providers.filter((entry) => entry.type === "cli" && entry.enabled).length <= 1)}
+                                  className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                                >
+                                  {provider.enabled ? "Disable" : "Enable"}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
                     </div>
 
                     <div>
@@ -1134,7 +785,7 @@ export function SettingsPage() {
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-border">
                   <span className="text-muted-foreground">Storage</span>
-                  <span className="font-mono text-[12px] truncate max-w-[300px]" title={dataDir}>{dataDir || "Local filesystem"}</span>
+                  <span>Local filesystem</span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-border">
                   <span className="text-muted-foreground">AI</span>
@@ -1158,7 +809,7 @@ export function SettingsPage() {
                 </p>
                 <div className="space-y-2">
                   <a
-                    href="https://discord.gg/hJa5TRTbTH"
+                    href="https://discord.gg/runcabinet"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] font-medium hover:bg-primary/10 transition-colors"

@@ -1,0 +1,12 @@
+{
+  "installKind": "source-managed",
+  "managed": true,
+  "installedAt": "2026-04-13T21:14:05.992Z",
+  "currentVersion": "0.2.12",
+  "releaseTag": "v0.2.12",
+  "projectRoot": "my-startup",
+  "dataDir": "my-startup/data",
+  "manifestUrl": "https://github.com/hilash/cabinet/releases/latest/download/cabinet-release.json",
+  "packageManager": "npm",
+  "createdBy": "create-cabinet"
+}

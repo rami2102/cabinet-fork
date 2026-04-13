@@ -1,16 +1,16 @@
-import { execSync } from "child_process";
 import type { AgentProvider, ProviderStatus } from "../provider-interface";
-import { checkCliProviderAvailable, resolveCliCommand, RUNTIME_PATH } from "../provider-cli";
+import { checkCliProviderAvailable } from "../provider-cli";
 
 export const codexCliProvider: AgentProvider = {
   id: "codex-cli",
   name: "Codex CLI",
   type: "cli",
   icon: "bot",
-  installMessage: "Codex CLI not found. Install with: npm i -g @openai/codex",
+  installMessage: "Codex CLI not found. Install with: npm install -g @openai/codex or brew install --cask codex",
   installSteps: [
-    { title: "Install Codex CLI", detail: "npm i -g @openai/codex" },
-    { title: "Log in", detail: "Run codex in your terminal and follow the login prompts." },
+    { title: "Get an OpenAI API key", detail: "You need an OpenAI account with API access.", link: { label: "OpenAI API keys", url: "https://platform.openai.com/api-keys" } },
+    { title: "Set API key", detail: "export OPENAI_API_KEY=sk-..." },
+    { title: "Install Codex CLI", detail: "npm install -g @openai/codex" },
   ],
   command: "codex",
   commandCandidates: [
@@ -66,37 +66,11 @@ export const codexCliProvider: AgentProvider = {
         };
       }
 
-      // Check auth status via `codex login status`
-      try {
-        const cmd = resolveCliCommand(this);
-        const output = execSync(`${cmd} login status 2>&1`, {
-          encoding: "utf8",
-          env: { ...process.env, PATH: RUNTIME_PATH },
-          stdio: ["ignore", "pipe", "ignore"],
-          timeout: 5000,
-        }).trim();
-
-        // Output is e.g. "Logged in using ChatGPT"
-        if (output.toLowerCase().startsWith("logged in")) {
-          return {
-            available: true,
-            authenticated: true,
-            version: output,
-          };
-        }
-
-        return {
-          available: true,
-          authenticated: false,
-          error: "Codex CLI is installed but not logged in. Run: codex login",
-        };
-      } catch {
-        return {
-          available: true,
-          authenticated: false,
-          error: "Could not verify login status. Run: codex login",
-        };
-      }
+      return {
+        available: true,
+        authenticated: true,
+        version: "Codex CLI",
+      };
     } catch (error) {
       return {
         available: false,

@@ -36,8 +36,6 @@ export function isMarkdownFile(name: string): boolean {
   return name.endsWith(".md");
 }
 
-const IGNORED_DIRS = new Set(["node_modules", "__pycache__", ".venv", "dist", "build", "out", "coverage"]);
-
 export function isHiddenEntry(name: string): boolean {
-  return name.startsWith(".") || IGNORED_DIRS.has(name);
+  return name.startsWith(".");
 }

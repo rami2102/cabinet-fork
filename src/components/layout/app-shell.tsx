@@ -7,11 +7,6 @@ import { KBEditor } from "@/components/editor/editor";
 import { WebsiteViewer } from "@/components/editor/website-viewer";
 import { PdfViewer } from "@/components/editor/pdf-viewer";
 import { CsvViewer } from "@/components/editor/csv-viewer";
-import { SourceViewer } from "@/components/editor/source-viewer";
-import { ImageViewer } from "@/components/editor/image-viewer";
-import { MediaViewer } from "@/components/editor/media-viewer";
-import { MermaidViewer } from "@/components/editor/mermaid-viewer";
-import { FileFallbackViewer } from "@/components/editor/file-fallback-viewer";
 import { HomeScreen } from "@/components/home/home-screen";
 import { AgentsWorkspace } from "@/components/agents/agents-workspace";
 import { JobsManager } from "@/components/jobs/jobs-manager";
@@ -140,17 +135,10 @@ export function AppShell() {
     : selectedPath.endsWith(".pdf") ? "pdf"
     : null
     : null;
-  const nodeType = selectedNode?.type || inferredType;
-  const isWebsite = nodeType === "website";
-  const isApp = nodeType === "app";
-  const isPdf = nodeType === "pdf";
-  const isCsv = nodeType === "csv";
-  const isCode = nodeType === "code";
-  const isImage = nodeType === "image";
-  const isVideo = nodeType === "video";
-  const isAudio = nodeType === "audio";
-  const isMermaid = nodeType === "mermaid";
-  const isUnknown = nodeType === "unknown";
+  const isWebsite = selectedNode?.type === "website";
+  const isApp = selectedNode?.type === "app";
+  const isPdf = selectedNode?.type === "pdf" || inferredType === "pdf";
+  const isCsv = selectedNode?.type === "csv" || inferredType === "csv";
   const hasPersistentUpdateState =
     update?.updateStatus.state === "restart-required" ||
     update?.updateStatus.state === "failed" ||
@@ -236,33 +224,6 @@ export function AppShell() {
           title={selectedNode.frontmatter?.title || selectedNode.name}
         />
       );
-    }
-    if (isCode && (selectedNode || selectedPath)) {
-      const codePath = selectedNode?.path || selectedPath!;
-      const codeTitle = selectedNode?.frontmatter?.title || selectedNode?.name || codePath.split("/").pop() || "Source";
-      return <SourceViewer path={codePath} title={codeTitle} />;
-    }
-    if (isImage && (selectedNode || selectedPath)) {
-      const imgPath = selectedNode?.path || selectedPath!;
-      const imgTitle = selectedNode?.frontmatter?.title || selectedNode?.name || imgPath.split("/").pop() || "Image";
-      return <ImageViewer path={imgPath} title={imgTitle} />;
-    }
-    if ((isVideo || isAudio) && (selectedNode || selectedPath)) {
-      const mediaPath = selectedNode?.path || selectedPath!;
-      const mediaTitle = selectedNode?.frontmatter?.title || selectedNode?.name || mediaPath.split("/").pop() || "Media";
-      return <MediaViewer path={mediaPath} title={mediaTitle} type={isVideo ? "video" : "audio"} />;
-    }
-
-    if (isMermaid && (selectedNode || selectedPath)) {
-      const mmdPath = selectedNode?.path || selectedPath!;
-      const mmdTitle = selectedNode?.frontmatter?.title || selectedNode?.name || mmdPath.split("/").pop() || "Diagram";
-      return <MermaidViewer path={mmdPath} title={mmdTitle} />;
-    }
-
-    if (isUnknown && (selectedNode || selectedPath)) {
-      const unkPath = selectedNode?.path || selectedPath!;
-      const unkTitle = selectedNode?.frontmatter?.title || selectedNode?.name || unkPath.split("/").pop() || "File";
-      return <FileFallbackViewer path={unkPath} title={unkTitle} />;
     }
 
     // Default: editor

@@ -19,14 +19,13 @@ export async function deleteFileOrDir(absPath: string): Promise<void> {
 
 export async function listDirectory(
   absPath: string
-): Promise<{ name: string; isDirectory: boolean; isSymlink: boolean }[]> {
+): Promise<{ name: string; isDirectory: boolean }[]> {
   const entries = await fs.readdir(absPath, { withFileTypes: true });
   return Promise.all(
     entries.map(async (entry) => {
       let isDirectory = entry.isDirectory();
-      const isSymlink = entry.isSymbolicLink();
 
-      if (!isDirectory && isSymlink) {
+      if (!isDirectory && entry.isSymbolicLink()) {
         try {
           const stat = await fs.stat(path.join(absPath, entry.name));
           isDirectory = stat.isDirectory();
@@ -35,21 +34,9 @@ export async function listDirectory(
         }
       }
 
-      return { name: entry.name, isDirectory, isSymlink };
+      return { name: entry.name, isDirectory };
     })
   );
-}
-
-export async function unlinkSymlink(absPath: string): Promise<void> {
-  try {
-    const target = await fs.readlink(absPath);
-    const resolvedTarget = path.resolve(path.dirname(absPath), target);
-    const cabinetYaml = path.join(resolvedTarget, ".cabinet.yaml");
-    await fs.unlink(cabinetYaml).catch(() => {});
-  } catch {
-    // target may be broken — still remove the symlink
-  }
-  await fs.unlink(absPath);
 }
 
 export async function ensureDirectory(absPath: string): Promise<void> {

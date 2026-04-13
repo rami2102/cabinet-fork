@@ -14,16 +14,6 @@ import {
   GitBranch,
   FileType,
   Table,
-  Copy,
-  ClipboardCopy,
-  Link2,
-  Link2Off,
-  Code,
-  Image,
-  Video,
-  Music,
-  Workflow,
-  File,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TreeNode as TreeNodeType } from "@/types";
@@ -44,8 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LinkRepoDialog } from "./link-repo-dialog";
-import { getDataDir } from "@/lib/data-dir-cache";
 
 interface TreeNodeProps {
   node: TreeNodeType;
@@ -71,7 +59,6 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
   const [creating, setCreating] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameTitle, setRenameTitle] = useState("");
-  const [linkRepoOpen, setLinkRepoOpen] = useState(false);
 
   const isSelected = selectedPath === node.path;
   const isDragOver = dragOverPath === node.path;
@@ -90,10 +77,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
   };
 
   const handleDelete = () => {
-    const message = node.isLinked
-      ? `Unlink "${title}"? This removes the link but does not delete the original folder.`
-      : `Delete "${title}"?`;
-    if (confirm(message)) {
+    if (confirm(`Delete "${title}"?`)) {
       deletePage(node.path);
     }
   };
@@ -208,22 +192,8 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
               <AppWindow className="h-4 w-4 shrink-0 text-emerald-400" />
             ) : node.type === "website" ? (
               <Globe className="h-4 w-4 shrink-0 text-blue-400" />
-            ) : node.type === "code" ? (
-              <Code className="h-4 w-4 shrink-0 text-violet-400" />
-            ) : node.type === "image" ? (
-              <Image className="h-4 w-4 shrink-0 text-pink-400" />
-            ) : node.type === "video" ? (
-              <Video className="h-4 w-4 shrink-0 text-cyan-400" />
-            ) : node.type === "audio" ? (
-              <Music className="h-4 w-4 shrink-0 text-amber-400" />
-            ) : node.type === "mermaid" ? (
-              <Workflow className="h-4 w-4 shrink-0 text-teal-400" />
-            ) : node.type === "unknown" ? (
-              <File className="h-4 w-4 shrink-0 text-muted-foreground/50" />
             ) : node.hasRepo ? (
               <GitBranch className="h-4 w-4 shrink-0 text-orange-400" />
-            ) : node.isLinked ? (
-              <Link2 className="h-4 w-4 shrink-0 text-blue-400" />
             ) : hasChildren ? (
               isExpanded ? (
                 <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -241,24 +211,9 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
             <FilePlus className="h-4 w-4 mr-2" />
             Add Sub Page
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => setLinkRepoOpen(true)}>
-            <GitBranch className="h-4 w-4 mr-2" />
-            Load Knowledge
-          </ContextMenuItem>
           <ContextMenuItem onClick={() => { setRenameTitle(title); setRenameOpen(true); }}>
             <Pencil className="h-4 w-4 mr-2" />
             Rename
-          </ContextMenuItem>
-          <ContextMenuItem onClick={() => navigator.clipboard.writeText(node.path)}>
-            <Copy className="h-4 w-4 mr-2" />
-            Copy Relative Path
-          </ContextMenuItem>
-          <ContextMenuItem onClick={async () => {
-            const dir = await getDataDir();
-            navigator.clipboard.writeText(`${dir}/${node.path}`);
-          }}>
-            <ClipboardCopy className="h-4 w-4 mr-2" />
-            Copy Full Path
           </ContextMenuItem>
           <ContextMenuItem onClick={() => {
             fetch("/api/system/open-data-dir", {
@@ -272,12 +227,8 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem onClick={handleDelete} className="text-destructive">
-            {node.isLinked ? (
-              <Link2Off className="h-4 w-4 mr-2" />
-            ) : (
-              <Trash2 className="h-4 w-4 mr-2" />
-            )}
-            {node.isLinked ? "Unlink" : "Delete"}
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
@@ -342,8 +293,6 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
           </form>
         </DialogContent>
       </Dialog>
-
-      <LinkRepoDialog open={linkRepoOpen} onOpenChange={setLinkRepoOpen} parentPath={node.path} />
     </>
   );
 }

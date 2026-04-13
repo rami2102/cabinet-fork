@@ -11,9 +11,8 @@ export interface FrontMatter {
 export interface TreeNode {
   name: string;
   path: string;
-  type: "file" | "directory" | "website" | "app" | "pdf" | "csv" | "code" | "image" | "video" | "audio" | "mermaid" | "unknown";
+  type: "file" | "directory" | "website" | "app" | "pdf" | "csv";
   hasRepo?: boolean;
-  isLinked?: boolean;
   frontmatter?: Partial<FrontMatter>;
   children?: TreeNode[];
 }
